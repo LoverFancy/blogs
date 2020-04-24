@@ -1,4 +1,4 @@
-# 进击的Taro：taro-router原理分析
+# 进击的Taro系列：taro-router原理分析
 
 内部维护一套history状态
 
