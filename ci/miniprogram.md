@@ -36,9 +36,32 @@ tar dist
 
 在新版本的微信开发者工具中，提供了`命令行调用`和`http调用`两种方式进行登录、预览、上传等操作；
 
-## 脚本的实现
-
 ## Jenkins配置
+
+在使用Jenkins构建部署上，存在多种方式；你可以直接在你的Jenkins服务器的机器上完成部署，但是由于小程序的`命令行和http调用`只提供`Mac`和`Windows`两种方式，所以这就意味着Jenkins服务也需要在对应的操作系统上；不过，Jenkins的服务也有可能会部署在`Linux`系统上，而`Linux`上不支持小程序的`命令行和http调用`，因此，在这种情况下，就有必要将Jenkins服务和小程序的构建服务进行分离。 
+
+### 实现Master/Slave主从模式
+
+正好，Jenkins支持`Master/Slave`模式，在这种模式下，Jenkins服务可以部署在`Linux`服务器上，作为Master机器；而小程序的构建机器可以作为Jenkins服务器的Slave节点，专门运行由Master机器触发的小程序构建任务； 
+
+这里选择一台`Mac`机器作为小程序的构建机器，将这台机器配置为Slave节点时，需要在Jenkins按照如下步骤配置：
+
+- 在`Manage Jenkins > Manage Nodes and Clouds`中选择新建节点；
+- 新建节点时，选择`Permanant Agent`，然后开始配置节点信息；
+- 配置节点信息时，`远程工作目录`是指在Mac上运行jenkins的工作目录，需要自己手动创建一个目录，这样后面git拉到的代码会自动放到该目录下，这里一定要注意权限，文件目录设为可读可写，要不然后面jenkins启动时候会遇到权限问题；
+- `用法`选择`Only build jobs with label expressions matching this node`，确保只有Jenkins任务中声明的Label匹配，才能使用该Slave节点；
+- `启动方式`选择`Launch agents via SSH`，Credentials配置时，按照Slave机器的用户名和密码填写即可；
+- 配置完节点信息后，记得需要在Slave节点的`Mac`机器上，创建对应的`远程工作目录`，否则会构建时会提示找不到对应目录；
+- 最后，记得开启Slave节点`Mac`机器上的远程登录权限，否则无法通过`SSH`进行连接；
+- 成功后，会看到构建的节点多了一个`mac_node`，但此时，节点会处于`未连接`的状态，需要打开节点，再选择`Launch agent`进行启动；
+
+![Mac节点](./images/ci_jenkins_new_node.png)
+
+### 构建任务的创建
+
+
+
+## 脚本的实现
 
 ## 测试
 
