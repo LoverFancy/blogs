@@ -34,7 +34,14 @@ tar dist
 
 ## 命令行和http调用
 
-在新版本的微信开发者工具中，提供了`命令行调用`和`http调用`两种方式进行登录、预览、上传等操作；
+在新版本的微信开发者工具中，提供了[命令行调用](https://developers.weixin.qq.com/miniprogram/dev/devtools/cli.html)和[http调用](https://developers.weixin.qq.com/miniprogram/dev/devtools/http.html)两种方式进行登录、预览、上传等操作，具体使用方式可以直接参照官方文档； 
+
+> 需要注意的是，这两种调用都需要在微信开发工具的`设置 > 通用设置 > 安全`中开启服务端口。
+
+二者有什么区别呢：
+
+- `命令行调用`的方式，允许在当前机器上，通过命令行工具或者`shell`脚本对微信小程序中的命令进行调用；
+- 而`http调用`的方式，允许远程调用----------------------------------》 待验证
 
 ## Jenkins配置
 
