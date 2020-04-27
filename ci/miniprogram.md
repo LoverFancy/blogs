@@ -43,7 +43,7 @@ tar dist
 - `命令行调用`的方式，允许在当前机器上，通过命令行工具或者`shell`脚本对微信小程序开发工具中的命令进行调用；
 - 而`http调用`的方式，允许在当前机器上，通过http请求的方式调用微信小程序开发工具；该方式是否支持跨机器调用，还需要进一步研究，这里先不讨论；
 
-> 本文中将使用`命令行调用`去实现小程序的自动化部署
+> 本文中将使用`命令行调用`去实现小程序的自动化部署。
 
 ## Jenkins配置
 
@@ -73,7 +73,18 @@ tar dist
 
 `命令行调用`中的命令需要接收多个参数，例如`upload`命令就需要传递**项目地址**、**版本号**、**备注**等的参数，这些参数有一些会根据需求而改变，例如**版本号**可能每次都会变化；但是原始的Jenkins允许接收的参数有限，所以为了拓展参数，这里使用提前安装`Extended Choice Parameter Plug-In`和`Git Parameter Plug-In`用来拓展构建参数以及Git分支参数；
 
-- 创建一个`Freestyle Project`，配置Git分支参数、appId参数
+- 创建一个`Freestyle Project`，配置Git分支参数、appId参数；
+- 配置Git相关参数，例如使用`Git Parameter`插件提供分支选择；
+
+![GitParameter](./images/config_git_parameter.png)
+
+- 配置Git仓库，注意配好`Credentials`；
+
+![GitRepo](./images/config_git_repo.png)
+
+- 限制项目运行的节点为新创建的`mac_node`节点；
+
+![RestrictNode](./images/restrict_node.png)
 
 ## 脚本的实现
 
