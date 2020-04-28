@@ -86,9 +86,17 @@ tar dist
 
 ![RestrictNode](./images/restrict_node.png)
 
+- 配置`mac_node`主机的环境参数，在`Manage Jenkins > Manage Nodes and Clouds`中选择对应的主机节点，在配置中，设置环境参数，`键`为`PATH`，`值`可以从主机中通过`echo $PATH`命令查看；
+
+![EnvVal](./images/jenkins_node_env_var.png)
+
+- 在`Jenkins`任务中的`Execute shell`填写`shell`脚本；
+
+- 完成！其他的功能可以按照实际的需求进行扩展；
+
 ## 脚本的实现
 
-## 测试
+
 
 ## 脚本优化
 
