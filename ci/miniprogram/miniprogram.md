@@ -73,7 +73,7 @@ tar dist
 
 `命令行调用`中的命令需要接收多个参数，例如`upload`命令就需要传递**项目地址**、**版本号**、**备注**等的参数，这些参数有一些会根据需求而改变，例如**版本号**可能每次都会变化；但是原始的Jenkins允许接收的参数有限，所以为了拓展参数，这里使用提前安装`Extended Choice Parameter Plug-In`和`Git Parameter Plug-In`用来拓展构建参数以及Git分支参数；
 
-- 创建一个`Freestyle Project`，配置Git分支参数、appId参数；
+- 创建一个`Freestyle Project`，配置`String Parameter`：appId参数、版本号、描述；
 - 配置Git相关参数，例如使用`Git Parameter`插件提供分支选择；
 
 ![GitParameter](./images/config_git_parameter.png)
@@ -96,10 +96,26 @@ tar dist
 
 ## 脚本的实现
 
-由于本文将使用`命令行调用`去实现小程序的自动化部署，下面将展示`shell`脚本的实现：
+由于本文将使用`命令行调用`去实现小程序的自动化部署，下面将实现对应的`shell`脚本：
 
 ```shell
+npm i
 
+alias mpcli='/Applications/wechatwebdevtools.app/Contents/MacOS/cli'
+
+mpcli open
+
+npm run build:weapp
+
+upload_ret=$(mpcli upload --project ${WORKSPACE}/dist --appid ${APPID} -v ${VERSION} -d ${DESC})
+
+if [ $upload_ret == 0 ]
+  then
+  echo "上传成功!"
+else
+  echo "返回状态码${upload_ret}，上传失败!"
+  exit 1
+fi
 ```
 
 ## 脚本优化
