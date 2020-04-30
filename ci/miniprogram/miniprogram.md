@@ -99,6 +99,8 @@ tar dist
 由于本文将使用`命令行调用`去实现小程序的自动化部署，下面将实现对应的`shell`脚本：
 
 ```shell
+git checkout ${BRANCH}
+
 npm i
 
 alias mpcli='/Applications/wechatwebdevtools.app/Contents/MacOS/cli'
@@ -107,19 +109,31 @@ mpcli open
 
 npm run build:weapp
 
-upload_ret=$(mpcli upload --project ${WORKSPACE}/dist --appid ${APPID} -v ${VERSION} -d ${DESC})
-
-if [ $upload_ret == 0 ]
-  then
-  echo "上传成功!"
-else
-  echo "返回状态码${upload_ret}，上传失败!"
-  exit 1
-fi
+mpcli upload --project ${WORKSPACE}/dist -v ${VERSION} -d ${DESC}
 ```
 
-## 脚本优化
+> 注意，需要先登录开发者工具
+
+大致流程为：
+
+- 切换指定分支，安装依赖；
+- 设置`alias`，缩短命令长度；
+- 执行`open`命令，确保小程序开发工具已经打开；
+- 执行构建命令；
+- 上传`dist`目录代码；
+
+## 测试
+
+下面就看看执行的效果：
+
+- 选择`Build with Parameters`，填写必须的参数：
+
+![构建参数](./images/build_params.png)
+
+- 点击构建后，查看控制台输出，如下结果为成功！
+
+![构建结果](./images/build_result.png)
 
 ## 总结
 
-
+本篇文章主要分享了关于在小程序构建流程中的一个痛点，并且通过`Jenkins`和小程序开发工具的`命令行调用`去解决在开发流程上的问题，实现构建流程的自动化；文章中不仅有`脚本的实现`，而且还有`Jenkins`的配置，思路会比较简单的，在实际应用中，可以结合具体应用场景，再进行改造，这里先`抛砖引玉`；最后希望文章能对大家有启发，同时也欢迎大家讨论指正！
