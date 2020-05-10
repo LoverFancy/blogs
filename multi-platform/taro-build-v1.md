@@ -19,9 +19,7 @@
 
 `bin/taro`文件作为`taro-cli`的入口，使用`commander.js`来解析命令和参数，支持`git`风格的子命令处理，可以根据子命令自动引导到`[command]-[subcommand]`格式命名的执行文件； 
 
-`taro build`命令则被自动引导到`bin/taro-build`文件下，
-
-### 目录结构
+`taro build`命令则被自动引导到`bin/taro-build`文件下，继而执行`bin/taro-build`的逻辑； 
 
 ### build命令的核心逻辑
 
