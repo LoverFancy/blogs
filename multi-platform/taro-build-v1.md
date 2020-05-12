@@ -25,7 +25,25 @@
 `taro build`命令功能非常多，它能够支持：
 
 - 构建`H5`；
+```sh
+taro build --type h5
+```
 - 构建小程序及小程序插件，支持`weapp/swan/alipay/tt/qq/jd`；
+```sh
+// 小程序
+taro build --type weapp
+// 小程序插件
+taro build --plugin weapp
+```
 - 构建UI库；
-- 等等...
+```sh
+cross-env TARO_BUILD_TYPE=component taro build --ui
+```
+
+`taro-build`接收`--type`参数的值，接收到的结果交由`dist/build.js`的`build`函数进行判断，通过判断`type`的值，决定执行不同构建类型的逻辑，例如，当`--type`为`h5`时，则执行`dist/h5/index.js`文件中`build`函数的逻辑；当`--type`为`weapp`时，则执行`dist/mini/index.js`文件中`build`逻辑；
+
+### h5的构建逻辑
+
+
+
 ### 结语
