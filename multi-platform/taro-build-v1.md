@@ -40,10 +40,18 @@ taro build --plugin weapp
 cross-env TARO_BUILD_TYPE=component taro build --ui
 ```
 
-`taro-build`接收`--type`参数的值，接收到的结果交由`dist/build.js`的`build`函数进行判断，通过判断`type`的值，决定执行不同构建类型的逻辑，例如，当`--type`为`h5`时，则执行`dist/h5/index.js`文件中`build`函数的逻辑；当`--type`为`weapp`时，则执行`dist/mini/index.js`文件中`build`逻辑；
+`taro-build`接收`--type`参数的值，接收到的结果交由`dist/build.js`的`build`函数进行判断，通过判断不同`type`的值，决定执行对应平台构建类型的逻辑，例如，当`--type`为`h5`时，则执行`dist/h5/index.js`文件中`build`函数的逻辑；当`--type`为`weapp`时，则执行`dist/mini/index.js`文件中`build`逻辑；
 
 ### h5的构建逻辑
 
+`h5`的构建流程主要经过：`源代码` => `中间代码` => `目标代码`的转换； 其中：
 
+- 源代码：一般是指`src`目录底下的代码，如果`config`中有配置`sourceRoot`，则源代码入口就为`sourceRoot`；
+- 中间代码：指`.temp`目录下的代码，由`taro-build`实现的中间流程，主要通过`babel`实现中间代码的转换和生成；
+- 目标代码：指最终运行在浏览器的代码，一般指`dist`目录下的代码，如果`config`中配置`outputRoot`，则目标代码将输出在`outputRoot`；
+
+所以，三种代码间的转换关系可以用下图表示：
+
+![](./images/taro-build-workflow.png)
 
 ### 结语
