@@ -54,4 +54,13 @@ cross-env TARO_BUILD_TYPE=component taro build --ui
 
 ![](./images/taro-build-workflow.png)
 
+`taro-build`帮助将源代码转换成中间代码，保存在`.temp`文件夹中，中间代码再交由`webpack`进行打包构建；
+
+#### 中间代码的生成
+
+
+
+
+#### 
+
 ### 结语
