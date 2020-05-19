@@ -4,7 +4,7 @@
 
 ### build命令的注册
 
-在执行`npm install -g @tarojs/cli`时，`npm`通过`package.json`文件中的`bin`字段，将`taro`这个命令注册到`[prefix]/bin`中作为全局命令； 
+在执行`npm install -g @tarojs/cli`时，`npm`通过读取`package.json`文件中的`bin`字段，将`taro`这个命令注册到`[prefix]/bin`中作为全局命令； 
 如果在当前项目目录下，执行`npm install @tarojs/cli`，则会将taro这个命令注册到`./node_modules/.bin/`底下作为本地命令；
 
 ```js
@@ -24,18 +24,18 @@
 
 `taro build`命令功能非常多，它能够支持：
 
-- 构建`H5`；
+- 1、构建`H5`；
 ```sh
 taro build --type h5
 ```
-- 构建小程序及小程序插件，支持`weapp/swan/alipay/tt/qq/jd`；
+- 2、构建小程序及小程序插件，支持`weapp/swan/alipay/tt/qq/jd`类型；
 ```sh
 // 小程序
 taro build --type weapp
 // 小程序插件
 taro build --plugin weapp
 ```
-- 构建UI库；
+- 3、构建UI库；
 ```sh
 cross-env TARO_BUILD_TYPE=component taro build --ui
 ```
@@ -58,7 +58,7 @@ cross-env TARO_BUILD_TYPE=component taro build --ui
 
 #### 中间代码的生成
 
-
+为什么会有中间代码生成这个步骤呢，这是因为
 
 
 #### 
