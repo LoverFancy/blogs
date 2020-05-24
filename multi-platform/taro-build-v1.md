@@ -119,6 +119,10 @@ export default class _TaroComponentClass extends Component {
 }
 ```
 
+#### webpack-runner逻辑
+
+中间代码生成后，缓存在`.temp`文件夹底下，并且作为`webpack-runner`的入口文件，`taro-build`在完成`buildTemp`的流程后，就会继续执行调用`webpack-runner`的逻辑；`webpack-runner`的逻辑实际上就是根据定义好的`webpack`的配置，生成目标代码的流程，后面将会有单独的一篇文章详述相关配置，这里不做再多的描述；
+
 ### 小程序的构建逻辑
 
 #### 
