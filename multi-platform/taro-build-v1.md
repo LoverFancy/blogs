@@ -74,6 +74,53 @@ cross-env TARO_BUILD_TYPE=component taro build --ui
 
 ![](./images/taro-build-h5.png)
 
+#### 文件的分析
+
+`ENTRY类型`的文件，由`processEntry`函数处理，通过`babel-traverse`中的traverse方法对不同类型的AST节点进行分析，其中涉及到很多细节，主要流程如下：
+
+- 1、解析`config`这个`ClassProperty`节点的内容，获取`pages`和`subPages`;
+- 2、依赖纠正：主要转换`tarojs/taro`、`tarojs/mobx`、`tarojs/redux`相关依赖为`tarojs/taro-h5`、`tarojs/mobx-h5`、`tarojs/redux-h5`；转换`ImportDeclaration`节点中的`alias`别名；引入`Nervjs`核心包；
+- 3、在`render`函数中，加入页面的`Router`组件(根据`pages`和`subPages`)，`Provider`组件，`Tabbar`组件；
+- 4、引入`taro-router`相关代码；
+
+![](./images/taro-build-h5-entry.png)
+
+`PAGE类型`和`NORMAL类型`的文件，由`processOthers`函数处理，也是通过`babel-traverse`中的traverse方法对不同类型的AST节点进行分析，这里只列出主要流程：
+
+- 1、依赖纠正：主要转换`tarojs/taro`、`tarojs/mobx`、`tarojs/redux`相关依赖为`tarojs/taro-h5`、`tarojs/mobx-h5`、`tarojs/redux-h5`；转换`ImportDeclaration`节点中的`alias`别名；引入`Nervjs`核心包；
+- 2、解析`config`这个`ClassProperty`节点的内容，获取配置项，对页面添加相关的组件和函数，例如`PullDownRefresh`组件和`onPageScroll`方法;
+- 3、导出纠正：当前类的`nameExport`纠正为`defaultExport`，例如：当前文件`page-index.js`
+
+```js
+// 纠正前
+export class PageIndex extends Component {
+  ...
+}
+
+// 纠正后
+class PageIndex extends Component {
+  ...
+}
+
+export default PageIndex;
+```
+
+- 4、声明纠正：当前`ClassExpression`或`ClassDeclaration`中，在没有`identifier`的情况下，添加默认的`identifier`为`_TaroComponentClass`：
+
+```js
+// 纠正前
+export default class extends Component {
+  ...
+}
+
+// 纠正后
+export default class _TaroComponentClass extends Component {
+  ...
+}
+```
+
+### 小程序的构建逻辑
+
 #### 
 
 ### 结语
