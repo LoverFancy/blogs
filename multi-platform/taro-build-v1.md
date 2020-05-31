@@ -2,7 +2,7 @@
 
 众所周知，`taro-cli`是Taro脚手架初始化和项目构建的的命令行工具，它的实现原理，相信大家从[Taro 技术揭秘：taro-cli](https://juejin.im/post/5b3ce041e51d45194832aaf6)这篇文章中已经有所了解；本文将对其中的项目构建`build`命令进行分析，从`cli`层面了解`taro`构建的过程到底做了什么；
 
-### build命令的注册
+## build命令的注册
 
 在执行`npm install -g @tarojs/cli`时，`npm`通过读取`package.json`文件中的`bin`字段，将`taro`这个命令注册到`[prefix]/bin`中作为全局命令； 
 如果在当前项目目录下，执行`npm install @tarojs/cli`，则会将taro这个命令注册到`./node_modules/.bin/`底下作为本地命令；
@@ -20,7 +20,7 @@
 
 所以当执行`taro build`命令时，则被`commander.js`自动引导到`bin/taro-build`文件下，继而执行`bin/taro-build`的逻辑； 
 
-### build命令的分发
+## build命令的分发
 
 `taro build`命令功能非常多，它能够支持：
 
@@ -42,7 +42,7 @@ cross-env TARO_BUILD_TYPE=component taro build --ui
 
 `taro-build`接收`--type`参数的值，接收到的结果交由`dist/build.js`的`build`函数进行判断，通过判断不同`type`的值，决定执行对应平台构建类型的逻辑，例如，当`--type`为`h5`时，则执行`dist/h5/index.js`文件中`build`函数的逻辑；当`--type`为`weapp`时，则执行`dist/mini/index.js`文件中`build`逻辑；
 
-### h5的构建逻辑
+## h5的构建逻辑
 
 `h5`的构建流程主要经过：`源代码` => `中间代码` => `目标代码`的转换； 其中：
 
@@ -56,7 +56,7 @@ cross-env TARO_BUILD_TYPE=component taro build --ui
 
 `taro-build`帮助将源代码转换成中间代码，并保存在`.temp`文件夹中，中间代码再交由`webpack`进行打包构建生成目标代码；
 
-#### 中间代码的生成
+### 中间代码的生成
 
 为什么会有中间代码生成这个步骤呢，这是因为：
 - 直接将`源代码`交由`webpack`进行编译，会出现部分方法的缺失、页面无法找到等的问题；
@@ -74,7 +74,7 @@ cross-env TARO_BUILD_TYPE=component taro build --ui
 
 ![](./images/taro-build-h5.png)
 
-#### 文件的分析
+### 文件的分析
 
 `ENTRY类型`的文件，由`processEntry`函数处理，通过`babel-traverse`中的traverse方法对不同类型的AST节点进行分析，其中涉及到很多细节，主要流程如下：
 
@@ -119,11 +119,11 @@ export default class _TaroComponentClass extends Component {
 }
 ```
 
-#### webpack-runner逻辑
+### webpack-runner逻辑
 
 中间代码生成后，缓存在`.temp`文件夹底下，并且作为`webpack-runner`的入口文件，`taro-build`在完成`buildTemp`的流程后，就会继续执行调用`webpack-runner`的逻辑；`webpack-runner`的逻辑实际上就是根据定义好的`webpack`的配置，生成目标代码的流程，后面将会有单独的一篇文章详述相关配置，这里不做再多的描述；
 
-### 小程序的构建逻辑
+## 小程序的构建逻辑
 
 `taro-build`的小程序构建逻辑不存在中间代码的生成，而是直接由`源代码`生成小程序能运行的`目标代码`；这里的源代码是指遵循`React`规范的taro代码，这种代码在小程序的容器中是无法直接运行的，所以需要通过`taro-build转换`成小程序可运行的代码，因此在这个流程中涉及大量的`AST语法解析和转换`； 
 
@@ -135,7 +135,7 @@ export default class _TaroComponentClass extends Component {
 
 构建流程需要依赖`taro-transformer-wx`包去解析`JSX`语法，已经对源代码的`AST语法树`，进行代码插入和转换；
 
-#### buildEntry逻辑
+### buildEntry逻辑
 
 构建入口的逻辑大概如下：
 
@@ -144,7 +144,7 @@ export default class _TaroComponentClass extends Component {
 - 3、通过AST转换，插入调用`taro-weapp`包中`createApp`函数的语句；
 - 4、生成`app.json`、`app.js`、`app.wxss`文件；
 
-#### buildPages逻辑
+### buildPages逻辑
 
 构建页面的逻辑大概如下：
 
@@ -154,7 +154,7 @@ export default class _TaroComponentClass extends Component {
 - 4、编译页面所依赖的组件文件，由`buildDepComponents`函数实现；
 - 5、生成页面对应的`page.json`、`page.js`、`page.wxss`、`page.wxml`文件；
 
-#### buildComponent逻辑
+### buildComponent逻辑
 
 构建组件与构建页面类似，但多了递归的步骤，其逻辑大概如下：
 
@@ -164,11 +164,11 @@ export default class _TaroComponentClass extends Component {
 - 4、`递归`编译组件所依赖的组件文件，由`buildDepComponents`函数实现；
 - 5、生成页面对应的`page.json`、`page.js`、`page.wxss`、`page.wxml`文件；
 
-#### taro-transformer-wx
+### taro-transformer-wx
 
 `taro`将`JSX`解析到小程序模板的逻辑，单独拆成一个包`taro-transformer-wx`，里面涉及到大量的AST解析和转换，本文由于篇幅的关系，暂时不详细分析，希望后面会有单独的文章去分析`小程序AST转换的流程`，敬请期待；
 
-### 结语
+## 结语
 
 总的来说，从`cli`层面去看taro的构建流程，会发现为了兼容多平台，taro会使用较多的`AST解析和转换`，帮助将`React`规范的taro代码转换到对应平台能够运行的代码；这里也告诉我们，作为一个前端er，学习和掌握`AST`相关知识，能让你看到更大的世界！ 
 
