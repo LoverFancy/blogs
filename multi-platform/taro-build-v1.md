@@ -1,4 +1,4 @@
-# 进击的Taro 1.0系列：taro build原理分析
+# Taro 1.0系列：taro build原理分析
 
 众所周知，`taro-cli`是Taro脚手架初始化和项目构建的的命令行工具，它的实现原理，相信大家从[Taro 技术揭秘：taro-cli](https://juejin.im/post/5b3ce041e51d45194832aaf6)这篇文章中已经有所了解；本文将对其中的项目构建`build`命令进行分析，从`cli`层面了解`taro`构建的过程到底做了什么；
 
@@ -125,6 +125,51 @@ export default class _TaroComponentClass extends Component {
 
 ### 小程序的构建逻辑
 
-#### 
+`taro-build`的小程序构建逻辑不存在中间代码的生成，而是直接由`源代码`生成小程序能运行的`目标代码`；这里的源代码是指遵循`React`规范的taro代码，这种代码在小程序的容器中是无法直接运行的，所以需要通过`taro-build转换`成小程序可运行的代码，因此在这个流程中涉及大量的`AST语法解析和转换`； 
+
+小程序的构建流程主要分三步完成(当然这里还有很多细节，但本文暂不详细阐述)：
+
+- 构建入口：指构建`sourceDir`指定的文件，默认是`app.jsx`文件，构建的逻辑由`buildEntry`函数完成；
+- 构建页面：指构建在`app.jsx`文件中的`config.pages`配置好的页面文件，主要由`buildPages`函数完成；
+- 构建组件：指构建页面文件中依赖的组件，主要由`buildSingleComponent`函数完成；
+
+构建流程需要依赖`taro-transformer-wx`包去解析`JSX`语法，已经对源代码的`AST语法树`，进行代码插入和转换；
+
+#### buildEntry逻辑
+
+构建入口的逻辑大概如下：
+
+- 1、调用`taro-transformer-wx`中的`wxTransformer`方法转换`JSX语法`；
+- 2、将`app.jsx`中的`es6`语法通过`babel`转换为`es5`，并且引入`taro-weapp`核心包；
+- 3、通过AST转换，插入调用`taro-weapp`包中`createApp`函数的语句；
+- 4、生成`app.json`、`app.js`、`app.wxss`文件；
+
+#### buildPages逻辑
+
+构建页面的逻辑大概如下：
+
+- 1、调用`taro-transformer-wx`中的`wxTransformer`方法转换`JSX语法`；
+- 2、将页面js中的`es6`语法通过`babel`转换为`es5`，并且引入`taro-weapp`核心包；
+- 3、通过AST转换，插入调用`taro-weapp`包中`createComponent`函数的语句；
+- 4、编译页面所依赖的组件文件，由`buildDepComponents`函数实现；
+- 5、生成页面对应的`page.json`、`page.js`、`page.wxss`、`page.wxml`文件；
+
+#### buildComponent逻辑
+
+构建组件与构建页面类似，但多了递归的步骤，其逻辑大概如下：
+
+- 1、调用`taro-transformer-wx`中的`wxTransformer`方法转换`JSX语法`；
+- 2、将组件js中的`es6`语法通过`babel`转换为`es5`，并且引入`taro-weapp`核心包；
+- 3、通过AST转换，插入调用`taro-weapp`包中`createComponent`函数的语句；
+- 4、`递归`编译组件所依赖的组件文件，由`buildDepComponents`函数实现；
+- 5、生成页面对应的`page.json`、`page.js`、`page.wxss`、`page.wxml`文件；
+
+#### taro-transformer-wx
+
+`taro`将`JSX`解析到小程序模板的逻辑，单独拆成一个包`taro-transformer-wx`，里面涉及到大量的AST解析和转换，本文由于篇幅的关系，暂时不详细分析，希望后面会有单独的文章去分析`小程序AST转换的流程`，敬请期待；
 
 ### 结语
+
+总的来说，从`cli`层面去看taro的构建流程，会发现为了兼容多平台，taro会使用较多的`AST解析和转换`，帮助将`React`规范的taro代码转换到对应平台能够运行的代码；这里也告诉我们，作为一个前端er，学习和掌握`AST`相关知识，能让你看到更大的世界！ 
+
+最后，本文作为一篇原理分析的文章，如有疏漏以及错误，欢迎大家批评指正！

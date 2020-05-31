@@ -1,4 +1,4 @@
-# 进击的Taro 1.0系列：taro-router原理分析
+# Taro 1.0系列：taro-router原理分析
 
 ## Taro路由系统
 
@@ -13,6 +13,8 @@
 可以通过下图更加直观表示上述API和页面栈的关系：
 
 ![](./images/taro-router-stack.png)
+
+
 
 在小程序端，路由API将直接转换成调用原生API的方式
 
