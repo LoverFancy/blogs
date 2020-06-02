@@ -44,7 +44,7 @@
 
 ```js
 // 入口文件
-class App extends Component {
+class App extends Taro.Component {
 
   render() {
     return <Router mode={"hash"} history={_taroHistory} routes={[{
@@ -66,17 +66,158 @@ class App extends Component {
 
 `Router`组件当收到`TransitionManager`发布的事件后，根据其回调函数中的三个参数`fromLocation, toLocation, action`作进一步处理：
 
-- fromLocation 表示
-- toLocation 表示
-- action 表示
+- fromLocation 表示从哪个路径跳转；
+- toLocation 表示跳转到哪个路径；
+- action 表示跳转的动作，包含`PUSH、POP、REPLACE`；
+
+根据返回的`PUSH、POP、REPLACE`动作类型，对页面栈`routeStack`进行页面的入栈、出栈、替换处理；
+
+### PUSH动作
+
+当监听到的action为`PUSH`时：
+
+- 首先会对`toLocation`进行匹配，目的是为了找到对应的`route`对象，`route`对象包含`path, componentLoader, isIndex`等等的信息，其中`componentLoader`指向了要加载的页面组件；
+- 随后，会将匹配到的`route`对象`matchedRoute`加入到`routeStack`中；
+- 最后通过调用`setState`进行更新；
+
+```js
+push (toLocation) {
+  const routeStack= [...this.state.routeStack]
+  const matchedRoute = this.computeMatch(toLocation)
+  routeStack.forEach(v => { v.isRedirect = false })
+  routeStack.push(assign({}, matchedRoute, {
+    key: toLocation.state.key,
+    isRedirect: false
+  }))
+  this.setState({ routeStack, location: toLocation })
+}
+```
+
+### POP动作
+
+当监听到的action为`POP`时：
+
+- 首先，根据`fromLocation`和`toLocation`的`key`值之差，决定在要页面栈中回退多少个页面；
+- 计算出的差值为`delta`，再通过`splice`进行删除；
+- 删除操作完成后，检查页面栈的长度是否为0，若为0，则将`toLocation`对应的页面推入页面栈；
+- 最后通过调用`setState`进行更新；
+
+```js
+pop (toLocation, fromLocation) {
+  let routeStack = [...this.state.routeStack]
+  const fromKey = Number(fromLocation.state.key)
+  const toKey = Number(toLocation.state.key)
+  const delta = toKey - fromKey
+
+  routeStack.splice(delta)
+
+  if (routeStack.length === 0) {
+    // 不存在历史栈, 需要重新构造
+    const matchedRoute = this.computeMatch(toLocation)
+    routeStack = [assign({}, matchedRoute, {
+      key: toLocation.state.key,
+      isRedirect: false
+    })]
+  }
+
+  this.setState({ routeStack, location: toLocation })
+}
+```
+
+### REPLACE动作
+
+当监听到的action为`RELPLACE`时：
+
+- 首先会对`toLocation`进行匹配，找到对应的`route`对象`matchedRoute`；
+- 删除页面栈栈顶的`route`对象，替换为`matchedRoute`；
+- 最后通过调用`setState`进行更新；
+
+```js
+replace (toLocation) {
+  const routeStack = [...this.state.routeStack]
+  const matchedRoute = this.computeMatch(toLocation)
+  // 替换
+  routeStack.splice(-1, 1, assign({}, matchedRoute, {
+    key: toLocation.state.key,
+    isRedirect: true
+  }))
+  this.setState({ routeStack, location: toLocation })
+}
+```
 
 ## 页面更新
 
-内部维护一套history状态
+在获知具体的页面栈动作之后，`routeStack`对象将会发生变化，`routeStack`的更新，也会触发`Route`组件数量的变化；
 
-业务代码中使用history api进行pushState，这个状态将不再内部维护的history状态中
+> 上文提及到，Route组件是具体页面的包裹
+
+`Router`组件的`render`函数中，根据`routeStack`的大小，渲染对应的`Route`组件：
+```js
+render () {
+  const currentLocation = Taro._$router
+  return (
+    <div
+      className="taro_router"
+      style={{ height: '100%' }}>
+      {this.state.routeStack.map(({ path, componentLoader, isIndex, isTabBar, key, isRedirect }, k) => {
+        return (
+          <Route
+            path={path}
+            currentLocation={currentLocation}
+            componentLoader={componentLoader}
+            isIndex={isIndex}
+            key={key}
+            k={k}
+            isTabBar={isTabBar}
+            isRedirect={isRedirect}
+            collectComponent={this.collectComponent}
+          />
+        )
+      })}
+    </div>
+  )
+}
+```
+
+在`Route`组件实例初始化后，将会调用组件内`updateComponent`方法，进行具体页面的拉取：
+
+```js
+updateComponent (props = this.props) {
+  props.componentLoader()
+    .then(({ default: component }) => {
+      if (!component) {
+        throw Error(`Received a falsy component for route "${props.path}". Forget to export it?`)
+      }
+      const WrappedComponent = createWrappedComponent(component)
+      this.wrappedComponent = WrappedComponent
+      this.forceUpdate()
+    }).catch((e) => {
+      console.error(e)
+    })
+}
+```
+
+是否记得在入口文件中插入的代码：
+
+```js
+<Router mode={"hash"} history={_taroHistory} routes={[{
+  path: '/pages/demo/index',
+  componentLoader: () => import( /* webpackChunkName: "demo_index" */'./pages/demo/index'),
+  isIndex: true
+}, {
+  path: '/pages/index/index',
+  componentLoader: () => import( /* webpackChunkName: "index_index" */'./pages/index/index'),
+  isIndex: false
+}]} customRoutes={{}} />;
+```
+
+`componentLoader`字段传入的是一个`dynamic import`形式的函数，它的返回是一个`Promise`，这样就可以对应上`updateComponent`中`props.componentLoader()`的调用了，它的`then`回调中，表示这个`dynamic import`对应的模块已经成功加载，可以获取该模块导出的`component`了；获取导出的`component`后，经过包装再触发强制更新，进行渲染；
 
 ## 页面状态的管理
+
+`taro-router`内部维护一套history状态，
+
+业务代码中使用history api进行pushState，这个状态将不再内部维护的history状态中
 
 ## 路由拦截的实现
 
