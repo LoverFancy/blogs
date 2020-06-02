@@ -20,7 +20,7 @@
 
 ## 页面栈的管理
 
-众所周知，`Taro H5端`是一个单页应用，其路由系统基于浏览器的`history`路由（更多关于单页应用的原理，推荐看看[这篇文章](https://zhuanlan.zhihu.com/p/31876075)）； 
+众所周知，`Taro H5端`是一个单页应用，其路由系统基于浏览器的`history`路由（更多关于单页应用的路由原理，推荐看看[这篇文章](https://zhuanlan.zhihu.com/p/31876075)）； 
 
 > 这里我们要记住`history API`中的`history.pushState`、`history.replaceState`、`history.go`还有`popstate事件`这几个关键API，是整个路由系统的关键；
 
