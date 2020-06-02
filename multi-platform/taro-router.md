@@ -215,18 +215,98 @@ updateComponent (props = this.props) {
 
 ## 页面状态的管理
 
-`taro-router`内部维护一套history状态，
+`taro-router`其内部维护一套页面状态，配合浏览器的`history`API进行状态管理；内部实例化`TransitionManager`，用于当页面状态变化后，通知订阅者更新页面；
 
-业务代码中使用history api进行pushState，这个状态将不再内部维护的history状态中
+### 初始化流程
+
+在`taro-build`的`ENTRY文件`解析阶段，会在`app.jsx`文件中插入`taro-router`的初始化代码：
+
+```js
+const _taroHistory = createHistory({
+  mode: "hash",
+  basename: "/",
+  customRoutes: {},
+  firstPagePath: "/pages/demo/index"
+});
+
+mountApis({
+  "basename": "/",
+  "customRoutes": {}
+}, _taroHistory);
+```
+
+在初始化代码中，会首先调用`createHistory`方法，然后调用`mountApi`将路由API(如：`navagateTo`、`redirectTo`)挂载到`Taro`实例下；下面就讲一下`createHistory`方法的流程：
+
+> 如果有看过[history](https://github.com/ReactTraining/history)这个仓库的同学，应该会更容易理解`taro-router`初始化流程，因为初始化流程跟`history`的逻辑很像；
+
+- 首先初始化`TransitionManager`，用于实现发布者订阅者模式，通知页面进行更新；
+- 获取初始化的`history state`，如果从`window.history.state`中能获取`key`，则使用该`key`，否则使用值为`'0'`的`key`值；
+- 将上一步初始化出来的`state`通过`window.history.replaceState`进行历史记录的替换；
+- 监听`popstate`事件，在回调函数中，对返回的`state`对象中的`key`值进行比较，通过比较得出需要进行的`action`，并将这个`action`通过`TransitionManager`通知到`Router`组件；
+
+结合页面栈管理以及页面更新的逻辑，可以把整个`taro-router`的结构描述如下：
+
+![](./images/taro-router-layer.png)
+
+### 状态变化过程
+
+`taro-router`维护的页面状态，保存内部的`stateKey`变量中，并且用于history对象的state中； 
+
+- 在首次进入单页应用时，`stateKey`会被赋予初始值`0`；
+- 当每次进行`pushState`时，会触发`stateKey`自增`1`；
+- 进行`replaceState`时，`stateKey`保持不变；
+- `popstate`触发时，回调函数会返回最新的`stateKey`，根据`前后两次stateKey`的比较，决定页面的action；
+
+状态变化流程如下图：
+
+![](./images/taro-router-state-change.png)
+
+> 注意：当业务代码中使用history api进行pushState，这个状态将不在taro-router内部维护的history状态中，甚至会影响到taro-router的逻辑；
+
+例如：在业务代码中调用`window.history.pushState`插入一个状态： 
+
+```js
+class Index extends Taro.Component {
+  componentDidMount() {
+    window.history.pushState({ key: 'mock' }, null, window.location.href);
+  }
+};
+```
+
+假设在插入该状态前，history的state为`{ key: '1' }`；此时，用户触发返回操作，浏览器`popstate`事件被触发，这个时候，就会执行`taro-router`的`handlePopState`方法：
+
+```js
+// 此处只保留关键代码
+const handlePopState = (e) => {
+    const currentKey = Number(lastLocation.state.key)
+    const nextKey = Number(state.key)
+    let action: Action
+    if (nextKey > currentKey) {
+      action = 'PUSH'
+    } else if (nextKey < currentKey) {
+      action = 'POP'
+    } else {
+      action = 'REPLACE'
+    }
+
+    store.key = String(nextKey)
+
+    setState({
+      action,
+      location: nextLocation
+    })
+  }
+```
+
+在比较`nextKey`和`currentKey`时，就出现了`1`和`mock`的比较，从而导致不可预计的`action`值产生；
 
 ## 路由拦截的实现
 
-beforeRouteLeave
+路由拦截，是指在路由进行变化时，能够拦截路由变化前的动作，保持页面不变，并交由业务逻辑作进一步的判断，再决定是否进行页面的切换； 
+
+在`Vue`里面，我们比较熟悉的`路由拦截`API就有`beforeRouteLeave`和`beforeRouteEnter`；在`React`当中，就有`react-router-dom`的`Prompt`组件；
+
+文中一开始的时候，就提到`Taro`在路由跳转的交互体验上，保持了小程序端和h5端的统一
 
 
-
-问题：
-
-1、为什么在mode hash下使用window location href跳转路由，会触发hashchange
-
-2、使用mode browser跳路由，会再向服务器发送请求吗？如果会，那mode hash会吗
+## 结语
