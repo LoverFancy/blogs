@@ -304,9 +304,111 @@ const handlePopState = (e) => {
 
 路由拦截，是指在路由进行变化时，能够拦截路由变化前的动作，保持页面不变，并交由业务逻辑作进一步的判断，再决定是否进行页面的切换； 
 
-在`Vue`里面，我们比较熟悉的`路由拦截`API就有`beforeRouteLeave`和`beforeRouteEnter`；在`React`当中，就有`react-router-dom`的`Prompt`组件；
+在`Vue`里面，我们比较熟悉的`路由拦截`API就有`vue-router`的`beforeRouteLeave`和`beforeRouteEnter`；在`React`当中，就有`react-router-dom`的`Prompt`组件；
 
-文中一开始的时候，就提到`Taro`在路由跳转的交互体验上，保持了小程序端和h5端的统一
+文中一开始的时候，就提到`Taro`在路由跳转的交互体验上，保持了小程序端和h5端的统一，因此小程序中没有实现的路由拦截，H5端也没有实现； 
 
+> 那么，在`taro-router`中是否就真的不能做到路由拦截呢？
+
+答案是`否定的`，作者本人从`vue-router`和`react-router-dom`以及`history`中得到灵感，在`taro-router`是实现了`路由拦截`的API`beforeRouteLeave`，大家可以查看相关[commit](https://github.com/NervJS/taro/commit/10c2c53a57c537d950268d98886f4763d4b92807)； 
+
+只有在页面中声明该拦截函数，页面才具有路由拦截功能，否则页面不具有拦截功能，该函数有三个参数分别为**from**，**to**，**next**
+- from：表示从哪个Location离开
+- to：表示要跳转到哪个Location
+- next: 函数，其入参为boolean；next(true)，表示继续跳转下一个页面，next(false)表示路由跳转终止
+
+它的使用方式是：
+
+```js
+import Taro, { Component } from '@tarojs/taro'
+import { View, Button } from '@tarojs/components'
+
+export default class Index extends Component {
+
+  beforeRouteLeave(from, to, next) {
+    Taro.showModal({
+      title: '确定离开吗'
+    }).then((res) => {
+      if (res.confirm) {
+        next(true);
+      }
+
+      if (res.cancel) {
+        next(false);
+      }
+    })
+  }
+
+  render () {
+    return (
+      <View>
+        <Button onClick={() => {
+          Taro.navigateBack();
+        }}>返回</Button>
+      </View>
+    )
+  }
+}
+```
+
+它的实现原理是借助`TransitionManager`中的`confirmTransitionTo`函数，在通知页面栈更新前，进行拦截；
+
+```js
+
+// 此处只保留关键代码
+const handlePopState = (e) => {
+  const currentKey = Number(lastLocation.state.key)
+  const nextKey = Number(state.key)
+  const nextLocation = getDOMLocation(state)
+  let action: Action
+  if (nextKey > currentKey) {
+    action = 'PUSH'
+  } else if (nextKey < currentKey) {
+    action = 'POP'
+  } else {
+    action = 'REPLACE'
+  }
+
+  store.key = String(nextKey)
+
+  // 拦截确认
+  transitionManager.confirmTransitionTo(
+    nextLocation,
+    action,
+    (result, callback) => {
+      getUserConfirmation(callback, lastLocation, nextLocation)
+    },
+    ok => {
+      if (ok) {
+        // 通知页面更新
+        setState({
+          action,
+          location: nextLocation
+        })
+      } else {
+        revertPop()
+      }
+    }
+  )
+}
+```
+
+拦截过程中，调用`getUserConfirmation`函数获取页面栈中`栈顶`的页面实例，并且从页面实例中获取`beforeRouteLeave`函数，调用它以获取`是否继续执行路由拦截`的结果；
+
+```js
+function getUserConfirmation(next, fromLocation, toLocation) {
+  // 获取栈顶的Route对象
+  const currentRoute = getCurrentRoute() || {}
+  const leaveHook = currentRoute.beforeRouteLeave
+
+  if (typeof leaveHook === 'function') {
+    tryToCall(leaveHook, currentRoute, fromLocation, toLocation, next)
+  } else {
+    next(true)
+  }
+}
+```
 
 ## 结语
+
+至此，`taro-router`的原理已经分析完，虽然里面依然有不少细节没有提及，但是主要的思路和逻辑，已经梳理得差不多，因此篇幅较长；希望大家读完后，能有所收获，同时也希望大家如发现其中疏漏的地方能批评指正，谢谢！
