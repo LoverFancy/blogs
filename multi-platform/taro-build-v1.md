@@ -74,7 +74,7 @@ cross-env TARO_BUILD_TYPE=component taro build --ui
 
 ![](./images/taro-build-h5.png)
 
-### 文件的分析
+### ENTRY文件的分析
 
 `ENTRY类型`的文件，由`processEntry`函数处理，通过`babel-traverse`中的traverse方法对不同类型的AST节点进行分析，其中涉及到很多细节，主要流程如下：
 
@@ -84,6 +84,8 @@ cross-env TARO_BUILD_TYPE=component taro build --ui
 - 4、引入`taro-router`相关代码；
 
 ![](./images/taro-build-h5-entry.png)
+
+### PAGE文件和NORMAL文件的分析
 
 `PAGE类型`和`NORMAL类型`的文件，由`processOthers`函数处理，也是通过`babel-traverse`中的traverse方法对不同类型的AST节点进行分析，这里只列出主要流程：
 
