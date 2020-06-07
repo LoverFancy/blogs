@@ -74,9 +74,11 @@
 
 ## CSS层叠上下文
 
+在引出`层叠上下文`概念之前，首先需要说明的是，在
+
 跟`BFC`一样，这个概念第一次看`层叠上下文`也是感觉比较抽象，在[张鑫旭大神的文章](https://www.zhangxinxu.com/wordpress/2016/01/understand-css-stacking-context-order-z-index/)中，用了`官员`来比喻`层叠上下文`，不同等级的`官员`来比喻`层叠水平`，这对理解概念更加容易了； 
 
-这里，我使用自己的另外一个比喻来重新理解`层叠上下文`，如果
+这里，我使用自己的另外一个比喻来重新理解`层叠上下文`，如果把
 
 > A stacking context is formed, anywhere in the document, by any element in the following scenarios:
 >
