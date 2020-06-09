@@ -118,26 +118,114 @@
 
 ## 如何产生层叠上下文
 
-> A stacking context is formed, anywhere in the document, by any element in the following scenarios:
->
-> - Root element of the document.
-> - Element with a position value absolute or relative and z-index value other than auto.
-> - Element with a position value fixed or sticky (sticky for all mobile browsers, but not older desktop).
-> - Element that is a child of a flex (flexbox) container, with z-index value other than auto.
-> - Element that is a child of a grid (grid) container, with z-index value other than auto.
-> - Element with a opacity value less than 1 (See the specification for opacity).
-> - Element with a mix-blend-mode value other than normal.
-> - Element with any of the following properties with value other than none: `transform`,`filter`,`perspective`,`clip-path`,`mask / mask-image / mask-border`.
-> - Element with a isolation value isolate.
-> - Element with a -webkit-overflow-scrolling value touch.
-> - Element with a will-change value specifying any property that would create a stacking context on non-initial value (see this post).
-> - Element with a contain value of layout, or paint, or a composite value that includes either of them (i.e. contain: strict, contain: content).
+满足以下条件中任意一个的元素都会自动创建一个层叠上下文（参考自[MDN](https://developer.mozilla.org/zh-CN/docs/Web/Guide/CSS/Understanding_z_index/The_stacking_context)）：
 
-## 例子
+- 文档根元素（`<html>`）；
+- position 值为 absolute（绝对定位）或  relative（相对定位）且 z-index 值不为 auto 的元素；
+- position 值为 fixed（固定定位）或 sticky（粘滞定位）的元素；
+- flex (flexbox) 容器的子元素，且 z-index 值不为 auto；
+- grid (grid) 容器的子元素，且 z-index 值不为 auto；
+- opacity 属性值小于 1 的元素；
+- mix-blend-mode 属性值不为 normal 的元素；
+- 以下任意属性值不为 none 的元素：`transform`，`filter`，`perspective`，`clip-path`，`mask / mask-image / mask-border`；
+- isolation 属性值为 isolate 的元素；
+- -webkit-overflow-scrolling 属性值为 touch 的元素；
+- will-change 值设定了任一属性而该属性在 non-initial 值时会创建层叠上下文的元素；
+- contain 属性值为 layout、paint 或包含它们其中之一的合成值（比如 contain: strict、contain: content）的元素。
 
-## 回到解决方案
+## 一些例子
+
+这里我摘选两个我认为比较重要的点，进行举例说明：
+
+- 具有层叠上下文的元素，比一般的元素的层叠水平要高
+
+```html
+<style>
+.div1 {
+    height: 100px;
+    width: 200px;
+    background-color: #00ff00;
+    /* filter: blur(0px); */
+}
+.div2 {
+    height: 100px;
+    width: 200px;
+    margin-top: -50px;
+    background-color: #ff8000;
+}
+</style>
+<div class="div1"></div>
+<div class="div2"></div>
+```
+
+正常情况下，`div1`和`div2`没有形成层叠上下文，二者根据`后来者居上`的原则，`div2`会覆盖在`div1`上方，如下图左边所示；当`div1`加上`filter: blur(0px);`的css属性，此时`div1`满足产生层叠上下文的条件，层叠水平比一般的元素要高，如下图右边所示； 
+
+![](./images/stacking-example-1.png)
+
+- 当不同层叠顺序的元素相比较时，不关心元素在DOM中的层级关系
+
+```html
+<style>
+.parent {
+  height: 100px;
+  width: 200px;
+  background-color: #ff8000;
+}
+
+.child {
+  height: 100px;
+  width: 200px;
+  position: relative;
+  z-index: -1;
+  background-color: #00ff00;
+  margin-left: 50px;
+}
+</style>
+<div class="parent">
+  <div class="child"></div>
+</div>
+<div class="parent" style="opacity: 0.9;">
+  <div class="child"></div>
+</div>
+```
+
+`parent`元素没有产生层叠上下文，所以`parent`和`child`元素是在同一个层叠上下文中的，所以根据层叠顺序，`child`属于`层叠水平为负值的后代层叠上下文`，而`parent`属于`常规流中，非行内(inline)、非定位的子元素`，因此`parent`应该在`child`之上，如下图左边所示； 
+
+当`parent`添加了`opacity: 0.9`属性后，形成了层叠上下文，`child`在这个层叠上下文当中，根据层叠顺序，它要比产生层叠上下文的元素的水平要高，因此`child`在`parent`之上，如下图右边所示；
+
+![](./images/stacking-example-2.png)
+
+## 回到最初的问题
+
+了解了层叠上下文的一些规律之后，重新回到最开始的问题，如何更好的解决`Loading`组件中`opacity`的css属性使得元素产生了`层叠上下文`；
+
+```html
+// opacity从0到1转换，transtition实现渐变
+<div id="toast" style="opacity: 0; transition: opacity 0.5s linear 0s;">
+  <div class="mask"></div>
+  <div class="loading">
+    ...省略代码
+  </div>
+</div>
+```
+
+我认为，既然`toast`节点已经产生了层叠上下文，而`loading`节点也有`position: fixed; z-index: 5000;`的css属性，`Loading`组件的最终目的是，使得组件层级位于较高的水平，所以不妨提高`toast`节点的层叠水平，修改后如下：
+
+```html
+// opacity从0到1转换，transtition实现渐变
+<div id="toast" style="opacity: 0; transition: opacity 0.5s linear 0s; position: fixed; z-index: 5000;">
+  <div class="mask"></div>
+  <div class="loading">
+    ...省略代码
+  </div>
+</div>
+```
 
 ## 结语
+
+通过上述案例和分析，了解到元素间的层叠关系，不仅仅是通过`z-index`控制，层叠上下文和层叠顺序的规则也会导致元素的堆叠产生变化，巧用规则以及了解层叠上下文的原理，有利于我们更好维护页面中元素的层级关系； 
+
+本文是站在巨人的肩膀上，根据自己的理解，自己遇到的问题进行总结的，欢迎大家批评指正； 
 
 ## Reference
 
@@ -145,4 +233,3 @@
 - [CSS层叠顺序探究](https://aotu.io/notes/2015/11/08/css-stack-order/index.html)
 - [MDN关于层叠上下文的文档](https://developer.mozilla.org/zh-CN/docs/Web/Guide/CSS/Understanding_z_index/The_stacking_context)
 - [css规范](https://www.w3.org/TR/CSS22/visuren.html#z-index)
-- 
