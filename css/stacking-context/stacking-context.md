@@ -12,7 +12,7 @@
 
 ![](./images/loading-before-unnormal.gif)
 
-> 这里的`Loading`组件是使用`opacity`以及`transition`去实现的（参考了[Taro](https://taro.js.org/)的实现），上述实现的具体代码可以从[这里]()查看；
+> 这里的`Loading`组件是使用`opacity`以及`transition`去实现的（参考了[Taro](https://taro.js.org/)的实现），上述实现的具体代码可以从[这里](https://github.com/jackie-gan/blogs/blob/master/css/stacking-context/example/loading-before.html)查看；
 
 `Loading`框的显示通过设置`opacity从0到1`的转换，中间通过`transtition`实现渐变的效果； 
 
