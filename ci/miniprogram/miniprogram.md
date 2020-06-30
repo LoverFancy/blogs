@@ -122,6 +122,12 @@ mpcli upload --project ${WORKSPACE}/dist -v ${VERSION} -d ${DESC}
 - 执行构建命令；
 - 上传`dist`目录代码；
 
+## 思路汇总
+
+根据解决思路，各个服务之间的关系如下图所示：
+
+![Sum](./images/sum.png)
+
 ## 测试
 
 下面就看看执行的效果：
