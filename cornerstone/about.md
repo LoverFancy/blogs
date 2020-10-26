@@ -13,8 +13,6 @@ Cornerstone将库进行模块化以便它既可以单独也可以组合使用；
 - Cornerstone Math: 用于支持工具开发的数学类工具function和class；
 - discomParser: 健壮的DICOM Part 10文件解析库；
 
-cornerstone
-
 ## 启用元素
 
 > 启用元素是一个用于在内部展示可交互的医学图像的HTML元素(一般是一个div)
@@ -33,7 +31,23 @@ cornerstone
 
 > `Cornerstone Image Id`是一个用于辨认Conerstone要展示的图片的URL；
 
-在Cornerstone使用的Image Id的URL 
+Image Id的URL scheme决定了Cornerstone在加载图片时需要调用哪一个Image Loader；这种策略也让Cornerstone可以同时展示从不同服务器上获取的不同协议的多张图片；例如，Cornerstone可以展示通过WADO获取的DICOM CT图像，同时也可以展示一张由数码相机拍摄并且存储在文件系统中的JPEG格式的皮肤科图片；
+
+## Image Loader
+
+> Image Loader是一个Javascript函数，这个函数负责为图片解析`Image Id`并且返回图片对应的`Image Load Object`给Cornerstone；`Image Load Object`包含一个Promise，这个Promise的状态为resolve时，会产生`Image`；
+
+由于加载图片时通常会发起对服务器的请求，因此图片加载的API必须是异步的；Cornerstone要求Image Loader返回一个包含Promise的对象，这个Promise将会被Cornerstone用于异步接收图片对象，以及接收可能产生的Error；
+
+### Image Loader 工作流
+
+![Image Loader工作流](./image-loader-workflow.png)
+
+- 1、ImageLoader将会与Cornerstone一起注册以便去加载特定`ImageId`的URL Scheme；
+- 2、应用通过loadImage()API发起请求加载图片；
+- 3、Cornerstone将加载图片的过程代理给`ImageLoader`；
+- 4、`ImageLoader`将会返回一个包含`Promise`的`Image Load Object`，这个`Promise`的状态将会被`resolved`，并且返回对应的`Image Object`一旦它接收到像素数据；获取像素数据可能需要使用`XMLHttpRequest`发起远端调用、像素数据的解压缩、以及将像素数据转换为Cornerstone能解析的形式；
+- 5、`Promise`转换为`resolved`状态并且返回`Image Object`，随后，调用displayImage()API去展示`Image Object`；
 
 ## 像素坐标系统
 
@@ -66,4 +80,3 @@ cornerstone
 - 在一个60Hz的系统中，如果渲染时间超过16ms，那么就会出现掉帧的现象；
 - 尽管渲染花费的时间远远低于16ms，但是一帧只允许一次渲染；
 - 所有的交互操作(如，窗口化、平移、放大...)都会被合并然后在下一帧进行渲染；
-
